@@ -2,7 +2,6 @@
 // Created by malaklinux on 4/16/23.
 //
 
-#include <cmath>
 #include "Fraction.hpp"
 
 namespace ariel {
@@ -75,25 +74,29 @@ namespace ariel {
 //-------------------------------------------------------------------------------------------------------
 
     Fraction operator+(const Fraction &frac1, const Fraction &frac2) {
+        Fraction::check_overflow(frac1, frac2, '+');
         int numerator = frac1.numerator * frac2.denominator + frac1.denominator * frac2.numerator;
         int denominator = frac1.denominator * frac2.denominator;
         return {numerator, denominator};
     }
 
     Fraction operator-(const Fraction &frac1, const Fraction &frac2) {
+        Fraction::check_overflow(frac1, frac2, '-');
         int numerator = frac1.numerator * frac2.denominator - frac1.denominator * frac2.numerator;
         int denominator = frac1.denominator * frac2.denominator;
         return {numerator, denominator};
     }
 
     Fraction operator*(const Fraction &frac1, const Fraction &frac2) {
+        Fraction::check_overflow(frac1, frac2, '*');
         int numerator = frac1.numerator * frac2.numerator;
         int denominator = frac1.denominator * frac2.denominator;
         return {numerator, denominator};
     }
 
     Fraction operator/(const Fraction &frac1, const Fraction &frac2) {
-        if (frac2.numerator == 0) throw invalid_argument("Division by zero.");
+        if (frac2 == 0) throw runtime_error("Division by zero.");
+        Fraction::check_overflow(frac1, frac2, '/');
         int numerator = frac1.numerator * frac2.denominator;
         int denominator = frac1.denominator * frac2.numerator;
         return {numerator, denominator};
@@ -108,11 +111,13 @@ namespace ariel {
     }
 
     bool operator>(const Fraction &frac1, const Fraction &frac2) {
-        return frac1.numerator * frac2.denominator > frac2.numerator * frac1.denominator;
+        return (double) frac1.numerator / (double) frac1.denominator >
+               (double) frac2.numerator / (double) frac2.denominator;
     }
 
     bool operator<(const Fraction &frac1, const Fraction &frac2) {
-        return frac1.numerator * frac2.denominator < frac2.numerator * frac1.denominator;
+        return (double) frac1.numerator / (double) frac1.denominator <
+               (double) frac2.numerator / (double) frac2.denominator;
     }
 
     bool operator>=(const Fraction &frac1, const Fraction &frac2) {
@@ -125,38 +130,96 @@ namespace ariel {
 
     Fraction &Fraction::operator++() {
         numerator += denominator;
+        reduce();
         return *this;
     }
 
     Fraction Fraction::operator++(int) {
         Fraction temp = *this;
         ++(*this);
+        reduce();
         return temp;
     }
 
     Fraction &Fraction::operator--() {
         numerator -= denominator;
+        reduce();
         return *this;
     }
 
     Fraction Fraction::operator--(int) {
         Fraction temp = *this;
         --(*this);
+        reduce();
         return temp;
     }
 
     ostream &operator<<(ostream &os, const Fraction &frac) {
-        os << frac.numerator << "/" << frac.denominator;
+        int numerator = frac.numerator;
+        int denominator = frac.denominator;
+        if (denominator < 0) {
+            numerator *= -1;
+            denominator *= -1;
+        }
+        os << numerator << "/" << denominator;
         return os;
     }
 
     istream &operator>>(istream &is, Fraction &frac) {
-        char c;
-        is >> frac.numerator >> c >> frac.denominator;
-        if (frac.denominator == 0) throw invalid_argument("Denominator cannot be zero.");
+        is >> frac.numerator >> frac.denominator;
+
+        if (is.fail()) {
+            throw runtime_error("Invalid fraction format.");
+        }
+        if (frac.denominator == 0) {
+            throw runtime_error("Denominator cannot be zero.");
+        }
+        if (frac.denominator < 0) {
+            frac.numerator *= -1;
+            frac.denominator *= -1;
+        }
         frac.reduce();
+
         return is;
     }
 
+    void Fraction::check_overflow(const Fraction &frac1, const Fraction &frac2, char optr) {
+        auto max = std::numeric_limits<int>::max;
+        auto min = std::numeric_limits<int>::min;
+        int64_t result1 = static_cast<int64_t>(frac1.numerator) * static_cast<int64_t>(frac2.denominator);
+        int64_t result2 = static_cast<int64_t>(frac1.denominator) * static_cast<int64_t>(frac2.numerator);
 
+        switch (optr) {
+            case '+':
+                if (result1 > max() || result1 < min() ||
+                    result2 > max() || result2 < min() ||
+                    (result1 + result2) > max() ||
+                    (result1 + result2) < min()) {
+                    throw overflow_error("Overflow in addition operation.");
+                }
+                break;
+            case '-':
+                if (result1 > max() || result1 < min() ||
+                    result2 > max() || result2 < min() ||
+                    (result1 - result2) > max() ||
+                    (result1 - result2) < min()) {
+                    throw overflow_error("Overflow in subtraction operation.");
+                }
+                break;
+            case '*':
+                if (result1 > max() || result1 < min() ||
+                    result2 > max() || result2 < min()) {
+                    throw overflow_error("Overflow in multiplication operation.");
+                }
+                break;
+            case '/':
+                if (result1 > max() || result1 < min() ||
+                    result2 > max() || result2 < min()) {
+                    throw overflow_error("Overflow in division operation.");
+                }
+                break;
+            default:
+                break;
+        }
+    }
 }
