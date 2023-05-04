@@ -282,7 +282,7 @@ TEST_SUITE("Overloaded + and - operator tests") {
         CHECK_EQ(Fraction{1, 4} + 0.75, Fraction{5, 5});
 
         // Adding a fraction to a complex floating-point number
-        CHECK_EQ(Fraction{1, 3} + 4.321, 4.654);
+        CHECK_EQ(Fraction{1, 3} + 4.321, Fraction{13963, 3000});
         CHECK_EQ(Fraction{2, 5} + 3.678, Fraction{2039, 500});
 
         // Subtracting a simple floating-point number from a fraction
@@ -298,7 +298,7 @@ TEST_SUITE("Overloaded + and - operator tests") {
         CHECK_EQ(1.0 - Fraction{1, 4}, Fraction{3, 4});
 
         // Subtracting a fraction from a complex floating-point number
-        CHECK_EQ(5.321 - Fraction{2, 3}, Fraction{2327, 500});
+        CHECK_EQ(5.321 - Fraction{2, 3}, Fraction{13963, 3000});
         CHECK_EQ(3.678 - Fraction{3, 4}, Fraction{366, 125});
 
         // Adding a simple floating-point number to a fraction (simple)
@@ -306,7 +306,7 @@ TEST_SUITE("Overloaded + and - operator tests") {
         CHECK_EQ(0.75 + Fraction{1, 5}, Fraction{19, 20});
 
         // Adding a complex floating-point number to a fraction
-        CHECK_EQ(4.321 + Fraction{1, 3}, Fraction{2327, 500});
+        CHECK_EQ(4.321 + Fraction{1, 3},  Fraction{13963, 3000});
         CHECK_EQ(3.678 + Fraction{2, 5}, Fraction{2039, 500});
     }
 
@@ -392,7 +392,7 @@ TEST_SUITE("Overloaded * operator tests") {
 
     TEST_CASE("Multiplying big fractions") {
         CHECK_EQ(Fraction{999, 1000} * Fraction{999, 1000}, Fraction{998001, 1000000});
-        CHECK_EQ(Fraction{12345, 23456} * Fraction{34567, 45678}, Fraction{426920715, 1072143816});
+        CHECK_EQ(Fraction{12345, 23456} * Fraction{34567, 45678}, Fraction{426729615, 1071423168});
     }
 
     TEST_CASE("Inequality checks with floating-point numbers and fractions") {
@@ -544,8 +544,8 @@ TEST_SUITE("Pre and post increment and decrement") {
         CHECK_NE(++frac, control);
 
         // Result changes signs
-        Fraction neg_frac{-1, 2};
-        Fraction neg_control{1, 2};
+        Fraction neg_frac{-1, 2};       //-1/2
+        Fraction neg_control{1, 2};       //1/2
         CHECK_EQ(++neg_frac, neg_control);
         CHECK_NE(++neg_frac, neg_control);
     }
@@ -735,7 +735,7 @@ TEST_CASE("Fraction with largest possible numerator and/or denominator and overf
     CHECK_THROWS_AS(f1 / f4, std::overflow_error);
 
     CHECK_THROWS_AS(f2 * f4, std::overflow_error);
-    CHECK_THROWS_AS(f2 / f4, std::overflow_error); //
+    CHECK_THROWS_AS(f2 / f4, std::overflow_error);
 
     CHECK_NOTHROW(f3 * f4);
     CHECK_NOTHROW(f4 / f3);
